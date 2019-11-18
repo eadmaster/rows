@@ -254,7 +254,15 @@ def plugin_name_by_uri(uri):
 
     # TODO: parse URIs like 'sqlite://' also
     # TODO: integrate this function with detect_source
+    
+    # ImageMagick-like file format parsing (e.g.: "json:-")
+    uri_splitted = uri.split(":")
+    if len(uri_splitted)>1 and uri_splitted[0] in FILE_EXTENSIONS:
+        plugin_name = uri_splitted[0]
+        plugin_name = MIME_TYPE_TO_PLUGIN_NAME[FILE_EXTENSIONS[plugin_name]]
+        return plugin_name
 
+    # else check regular files
     parsed = urlparse(uri)
     if parsed.scheme:
         if parsed.scheme == "sqlite":
@@ -513,8 +521,10 @@ def import_from_uri(
 def export_to_uri(table, uri, *args, **kwargs):
     "Given a `rows.Table` and an URI, detects plugin (from URI) and exports"
 
-    # TODO: support '-' also
     plugin_name = plugin_name_by_uri(uri)
+
+    if(uri.endswith('-')):
+        uri=sys.stdout.buffer
 
     try:
         export_function = getattr(rows, "export_to_{}".format(plugin_name))
